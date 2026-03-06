@@ -1,6 +1,8 @@
 const readline = require('readline-sync');
 
 class TTTGame {
+  static GAMES_TO_WIN = 3;
+  static MIDDLE_SQUARE = 5;
   static HUMAN_MARKER = 'X';
   static COMPUTER_MARKER = 'O';
   static WINNING_LINES = [
@@ -34,8 +36,30 @@ class TTTGame {
   }
 
   computerChoice() {
-    return this.computer.chooseSquare(this.game.board);
+    return (this.getSquare(this.computer)
+      || this.getSquare(this.human)
+      || this.getMiddleSquare()
+      || this.computer.chooseSquare(this.game.board));
   }
+
+  getSquare(player) {
+    for (let row of TTTGame.WINNING_LINES) {
+      let emptySquares = row.filter(square => this.getMarker(square) === Board.SQUARE)
+      let playerMarkers = row.filter(square => this.getMarker(square) === player.marker)
+      if (emptySquares.length === 1 && playerMarkers.length === 2) {
+        return emptySquares[0]
+      }
+    }
+    return null;
+  }
+
+  getMiddleSquare() {
+    if (this.getMarker(TTTGame.MIDDLE_SQUARE) === Board.SQUARE) {
+      return TTTGame.MIDDLE_SQUARE
+    }
+    return null;
+  }
+
 
   computerMove() {
     let computerSquare = this.computerChoice();
@@ -84,11 +108,43 @@ class TTTGame {
     if (this.winnerFound()) {
       if (this.isWinner(this.human)) {
         console.log('Congrats, you won!')
-      } else{
+        return 'Human'
+      } else {
         console.log('Boohoo, you lost!')
+        return 'Computer'
       }
     } else {
       console.log('Tie game!')
+      return 'Tie'
+    }
+
+  }
+
+  bestOfThree() {
+    let humanWins = 0;
+    let computerWins = 0;
+
+    while (true) {
+      console.log(`Human: ${humanWins}`)
+      console.log(`Computer: ${computerWins}`)
+
+      if (humanWins === 3 || computerWins === 3) {
+        break;
+      }
+
+      let result = this.play();
+      if (result === 'Human') {
+        humanWins += 1
+      } else if (result === 'Computer') {
+        computerWins += 1
+      }
+      this.game.resetBoard();
+    }
+
+    if (humanWins > computerWins) {
+      console.log('You win this game!')
+    } else {
+      console.log('Computer wins everything!!')
     }
 
   }
@@ -101,10 +157,10 @@ class Board {
   static SQUARE = ' '
 
   constructor() {
-    this.#createBoard()
+    this.resetBoard()
   }
 
-  #createBoard() {
+  resetBoard() {
     this.board = {}
     for (let i = 1; i <= Board.SIZE * Board.SIZE; i += 1) {
       this.board[i] = Board.SQUARE;
@@ -176,4 +232,4 @@ class Computer {
 
 
 let game = new TTTGame()
-game.play();
+game.bestOfThree();
